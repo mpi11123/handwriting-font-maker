@@ -251,14 +251,14 @@
   <section class="panel active" id="panel-template">
     <div class="card">
       <h2><span class="num">1</span>テンプレートをダウンロード</h2>
-      <p>大きめの文字マスで書けるように、4枚のシートに分けたよ。まとめてPDFかZIP(PNG4枚)でダウンロードできるよ。</p>
+      <p>全シート同じグリッドサイズ(8×10 / 2400×3000px)に統一したよ。文字数が少ないシートは余ったマスが空欄になるだけでOK。まとめてPDFかZIP(PNG4枚)でダウンロードできるよ。</p>
       <div class="spec-grid">
-        <div class="spec"><div class="k">対象文字数</div><div class="v">256字</div></div>
-        <div class="spec"><div class="k">シート枚数</div><div class="v">4枚</div></div>
-        <div class="spec"><div class="k">① すうじ・えいすう</div><div class="v">62字 / 2400×2400px</div></div>
-        <div class="spec"><div class="k">② ひらがな</div><div class="v">80字 / 2400×3000px</div></div>
-        <div class="spec"><div class="k">③ カタカナ</div><div class="v">80字 / 2400×3000px</div></div>
-        <div class="spec"><div class="k">④ きごう</div><div class="v">34字 / 2400×1500px</div></div>
+        <div class="spec"><div class="k">対象文字数</div><div class="v">268字</div></div>
+        <div class="spec"><div class="k">グリッド(全シート共通)</div><div class="v">8 × 10 / 2400×3000px</div></div>
+        <div class="spec"><div class="k">① すうじ・えいすう</div><div class="v">62字使用</div></div>
+        <div class="spec"><div class="k">② ひらがな</div><div class="v">80字使用</div></div>
+        <div class="spec"><div class="k">③ カタカナ</div><div class="v">80字使用</div></div>
+        <div class="spec"><div class="k">④ きごう</div><div class="v">46字使用</div></div>
       </div>
       <button class="btn" id="downloadPdfBtn">PDFでダウンロード(3ページ)</button>
       <div style="height:10px;"></div>
@@ -268,9 +268,9 @@
     <div class="card">
       <h2><span class="num">2</span>Procreateでの書き方</h2>
       <ul class="steps">
-        <li>シートごとに、記載のキャンバスサイズでProcreateに新規キャンバスを作成する(<b>①②③④でサイズが違う</b>ので注意)</li>
+        <li>Procreateで <b>2400×3000px</b> の新規キャンバスを作成する(①②③④すべて同じサイズでOK)</li>
         <li>該当シートの画像を<b>写真から読み込み</b>で配置し、レイヤーの不透明度を下げて「参考レイヤー」にする</li>
-        <li>参考レイヤーの<b>上に新規レイヤー</b>を作り、ラベルの文字をなぞらず自分の字で書く</li>
+        <li>参考レイヤーの<b>上に新規レイヤー</b>を作り、自分の字で書く</li>
         <li>書き終わったら<b>参考レイヤーを非表示</b>にする</li>
         <li>「共有」→<b>PNG書き出し</b>(背景透明のまま)。①②③④それぞれ書き出す</li>
       </ul>
@@ -289,7 +289,7 @@
     <div class="card">
       <h2><span class="num">2</span>書いた画像を3枚アップロード</h2>
 
-      <label class="field">① すうじ・えいすう(2400×2400px)</label>
+      <label class="field">① すうじ・えいすう(2400×3000px)</label>
       <input type="file" id="fileInputA" accept="image/png, image/jpeg">
       <div class="hint" id="sizeHintA" style="display:none;"></div>
 
@@ -301,7 +301,7 @@
       <input type="file" id="fileInputC" accept="image/png, image/jpeg">
       <div class="hint" id="sizeHintC" style="display:none;"></div>
 
-      <label class="field">④ きごう(2400×1500px)</label>
+      <label class="field">④ きごう(2400×3000px)</label>
       <input type="file" id="fileInputD" accept="image/png, image/jpeg">
       <div class="hint" id="sizeHintD" style="display:none;"></div>
     </div>
@@ -758,15 +758,15 @@ var KATAKANA_SMALL = 'ァィゥェォッャュョ'.split('');
 
 var SYMBOLS_JP = ['。','、','・','ー','「','」','『','』','（','）','【','】','！','？','〜','―','…','※'];
 var SYMBOLS_LATIN = ['.', ',', '!', '?', "'", '"', '(', ')', '-', ':', ';', '/'];
-var SYMBOLS_EXTRA = ['♡','☆','*','＊'];
+var SYMBOLS_DECO = ['♡','♥','☆','★','✦','✧','✩','❀','✿','♪','♫','⋆','˚','˖','*','＊'];
 
 var CELL = 300; // px per cell in template
 
 var SHEETS = [
-  { id:'A', key:'A', label:'すうじ・えいすう', chars: DIGITS.concat(UPPER, LOWER), cols:8, rows:8 },
+  { id:'A', key:'A', label:'すうじ・えいすう', chars: DIGITS.concat(UPPER, LOWER), cols:8, rows:10 },
   { id:'B', key:'B', label:'ひらがな', chars: HIRAGANA.concat(HIRAGANA_DAKU, HIRAGANA_HANDAKU, HIRAGANA_SMALL), cols:8, rows:10 },
   { id:'C', key:'C', label:'カタカナ', chars: KATAKANA.concat(KATAKANA_DAKU, KATAKANA_HANDAKU, KATAKANA_SMALL), cols:8, rows:10 },
-  { id:'D', key:'D', label:'きごう', chars: SYMBOLS_JP.concat(SYMBOLS_LATIN, SYMBOLS_EXTRA), cols:8, rows:5 }
+  { id:'D', key:'D', label:'きごう', chars: SYMBOLS_JP.concat(SYMBOLS_LATIN, SYMBOLS_DECO), cols:8, rows:10 }
 ];
 SHEETS.forEach(function(s){ s.w = s.cols*CELL; s.h = s.rows*CELL; });
 
@@ -784,6 +784,25 @@ document.querySelectorAll('.tab-btn').forEach(function(btn){
 });
 
 /* ---------- template generation ---------- */
+/* shared cell-position logic: centers the used characters as a block within
+   the full cols x rows grid (used by both template drawing and extraction) */
+function cellPosition(sheet, i){
+  var count = sheet.chars.length;
+  var totalRowsUsed = Math.max(1, Math.ceil(count / sheet.cols));
+  var startRow = Math.max(0, Math.floor((sheet.rows - totalRowsUsed) / 2));
+  var lastRowCount = count - (totalRowsUsed - 1) * sheet.cols;
+
+  var rowInBlock = Math.floor(i / sheet.cols);
+  var colInBlock = i % sheet.cols;
+  var isLastRow = (rowInBlock === totalRowsUsed - 1);
+  var col = colInBlock;
+  if (isLastRow && lastRowCount < sheet.cols){
+    col = Math.floor((sheet.cols - lastRowCount) / 2) + colInBlock;
+  }
+  var row = startRow + rowInBlock;
+  return { col: col, row: row };
+}
+
 function drawSheetTemplate(sheet){
   var canvas = document.createElement('canvas');
   canvas.width = sheet.w;
@@ -791,33 +810,49 @@ function drawSheetTemplate(sheet){
   var ctx = canvas.getContext('2d');
   ctx.clearRect(0,0,sheet.w,sheet.h);
 
-  for (var i = 0; i < sheet.cols*sheet.rows; i++){
-    var col = i % sheet.cols;
-    var row = Math.floor(i / sheet.cols);
-    var x0 = col * CELL, y0 = row * CELL;
+  // draw the full blank grid first (border + baseline for every cell)
+  for (var row = 0; row < sheet.rows; row++){
+    for (var col = 0; col < sheet.cols; col++){
+      var gx0 = col * CELL, gy0 = row * CELL;
+      ctx.strokeStyle = '#d9cdee';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(gx0+1, gy0+1, CELL-2, CELL-2);
 
-    ctx.strokeStyle = '#d9cdee';
-    ctx.lineWidth = 2;
-    ctx.strokeRect(x0+1, y0+1, CELL-2, CELL-2);
-
-    var baselineY = y0 + CELL * 0.78;
-    ctx.save();
-    ctx.setLineDash([8,8]);
-    ctx.strokeStyle = '#b9a6d9';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(x0+8, baselineY);
-    ctx.lineTo(x0+CELL-8, baselineY);
-    ctx.stroke();
-    ctx.restore();
-
-    if (i < sheet.chars.length){
-      ctx.fillStyle = '#9b8bb0';
-      ctx.font = '600 28px "Noto Sans JP", sans-serif';
-      ctx.textBaseline = 'top';
-      ctx.fillText(sheet.chars[i], x0+10, y0+8);
+      var gBaselineY = gy0 + CELL * 0.78;
+      ctx.save();
+      ctx.setLineDash([8,8]);
+      ctx.strokeStyle = '#b9a6d9';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(gx0+8, gBaselineY);
+      ctx.lineTo(gx0+CELL-8, gBaselineY);
+      ctx.stroke();
+      ctx.restore();
     }
   }
+
+  for (var i = 0; i < sheet.chars.length; i++){
+    var pos = cellPosition(sheet, i);
+    var x0 = pos.col * CELL, y0 = pos.row * CELL;
+    var baselineY = y0 + CELL * 0.78;
+
+    // large faint gray guide character (size/shape reference, not meant to be traced exactly)
+    ctx.save();
+    ctx.fillStyle = 'rgba(120,105,145,0.16)';
+    ctx.font = '500 ' + Math.round(CELL*0.62) + 'px "Noto Sans JP", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'alphabetic';
+    ctx.fillText(sheet.chars[i], x0 + CELL/2, baselineY);
+    ctx.restore();
+
+    // small corner label for quick identification while flipping through
+    ctx.fillStyle = '#9b8bb0';
+    ctx.font = '600 22px "Noto Sans JP", sans-serif';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+    ctx.fillText(sheet.chars[i], x0+10, y0+8);
+  }
+
   return canvas;
 }
 
@@ -1073,8 +1108,8 @@ function processAll(){
         if (charIdx >= sheet.chars.length){
           sheetIdx++; charIdx = 0; continue;
         }
-        var col = charIdx % sheet.cols, row = Math.floor(charIdx / sheet.cols);
-        var x0 = col*CELL, y0 = row*CELL;
+        var pos = cellPosition(sheet, charIdx);
+        var x0 = pos.col*CELL, y0 = pos.row*CELL;
         var cellData = buildCellMask(bctx, x0, y0, CELL, SAMPLE_RES);
         var maskFn0 = buildMaskFn(cellData.bits, SAMPLE_RES);
         var maskFn = function(x,y){ return maskFn0(x-1,y-1); };
