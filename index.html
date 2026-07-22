@@ -311,6 +311,11 @@
     <button id="clearBtn">🗑 この文字を消す</button>
   </div>
 
+  <div class="field-card" style="margin-top:10px;">
+    <label>✏️ ペンの太さ: <span id="penWidthValue">12</span></label>
+    <input type="range" id="penWidthSlider" min="4" max="32" value="12" style="width:100%;">
+  </div>
+
   <div class="hint">💡 指でもApple Pencilでも描けるよ。ピンチで拡大、ダブルタップで元のサイズに戻る。書いた内容はブラウザに自動保存されるよ(このGitHub Pagesのサイト上でのみ)。</div>
 
   <div class="bottom-actions">
@@ -420,6 +425,11 @@ function loadFromStorage(){
     var data = JSON.parse(raw);
     if (data && data.strokes) strokesByChar = data.strokes;
     if (data && data.fontName) document.getElementById('fontNameInput').value = data.fontName;
+    if (data && data.penWidth){
+      BASE_WIDTH = data.penWidth;
+      document.getElementById('penWidthSlider').value = BASE_WIDTH;
+      document.getElementById('penWidthValue').textContent = BASE_WIDTH;
+    }
   } catch(e){ /* ignore corrupted storage */ }
 }
 
@@ -429,7 +439,7 @@ function saveToStorageDebounced(){
   saveTimer = setTimeout(function(){
     try {
       var fontName = document.getElementById('fontNameInput').value;
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ strokes: strokesByChar, fontName: fontName }));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ strokes: strokesByChar, fontName: fontName, penWidth: BASE_WIDTH }));
     } catch(e){ /* storage full or unavailable, ignore */ }
   }, 400);
 }
@@ -442,6 +452,14 @@ var zoomWrap = document.getElementById('zoomWrap');
 
 var INK_COLOR = '#3d3350';
 var BASE_WIDTH = 12;
+
+var penWidthSlider = document.getElementById('penWidthSlider');
+var penWidthValue = document.getElementById('penWidthValue');
+penWidthSlider.addEventListener('input', function(){
+  BASE_WIDTH = parseInt(penWidthSlider.value, 10);
+  penWidthValue.textContent = BASE_WIDTH;
+  saveToStorageDebounced();
+});
 
 function currentChar(){ return CHAR_SET[currentIndex]; }
 
