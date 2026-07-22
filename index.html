@@ -110,7 +110,8 @@
   .canvas-frame{
     position:relative;
     width:100%;
-    max-width:380px;
+    max-width:300px;
+    margin:0 auto;
     aspect-ratio:1;
     background:var(--paper);
     border:2px solid var(--line);
@@ -265,6 +266,44 @@
   .overview-cell.current{outline:2px solid var(--lavender-deep); outline-offset:-2px;}
   .overview-cell canvas{width:100%;height:100%;}
 
+  /* ===== grid drawing mode ===== */
+  .griddraw-container{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+  }
+  .griddraw-cell{
+    position:relative;
+    background:var(--paper);
+    border:2px solid var(--line);
+    touch-action:none;
+  }
+  .griddraw-cell canvas{
+    display:block;
+    width:100%;
+    height:100%;
+  }
+  .griddraw-label{
+    position:absolute;
+    top:2px;left:3px;
+    font-size:10px;
+    color:var(--ink-soft);
+    background:rgba(255,255,255,0.8);
+    padding:1px 4px;
+    cursor:pointer;
+    z-index:2;
+  }
+  .griddraw-clear{
+    position:absolute;
+    top:2px;right:3px;
+    font-size:10px;
+    color:var(--ink-soft);
+    background:rgba(255,255,255,0.8);
+    padding:1px 4px;
+    cursor:pointer;
+    z-index:2;
+  }
+
   /* ===== export result modal reuses modal-sheet ===== */
   .status-line{
     display:flex;align-items:center;gap:8px;
@@ -294,29 +333,49 @@
     <div class="track"><div id="progressFill" style="width:0%"></div></div>
   </div>
 
-  <div class="char-stage">
-    <div class="nav-arrow" id="prevBtn">‹</div>
-    <div class="canvas-frame" id="canvasFrame">
-      <div class="canvas-zoomwrap" id="zoomWrap">
-        <canvas id="drawCanvas" width="600" height="600"></canvas>
-      </div>
-      <div class="char-badge" id="charBadge"></div>
-      <div class="char-index" id="charIndexLabel"></div>
-    </div>
-    <div class="nav-arrow" id="nextBtn">›</div>
+  <div class="bottom-actions" style="margin-top:0;">
+    <button class="btn ghost" id="modeToggleBtn" style="width:100%;">🔲 一覧で描く</button>
   </div>
 
-  <div class="toolbar">
-    <button id="undoBtn">↩️ 戻る</button>
-    <button id="clearBtn">🗑 この文字を消す</button>
+  <div id="singleModeSection">
+    <div class="char-stage">
+      <div class="nav-arrow" id="prevBtn">‹</div>
+      <div class="canvas-frame" id="canvasFrame">
+        <div class="canvas-zoomwrap" id="zoomWrap">
+          <canvas id="drawCanvas" width="600" height="600"></canvas>
+        </div>
+        <div class="char-badge" id="charBadge"></div>
+        <div class="char-index" id="charIndexLabel"></div>
+      </div>
+      <div class="nav-arrow" id="nextBtn">›</div>
+    </div>
+
+    <div class="toolbar">
+      <button id="undoBtn">↩️ 戻る</button>
+      <button id="clearBtn">🗑 この文字を消す</button>
+    </div>
+
+    <div class="field-card" style="margin-top:10px;">
+      <label>🖼️ 描画エリアの大きさ: <span id="canvasSizeValue">300</span>px</label>
+      <input type="range" id="canvasSizeSlider" min="200" max="500" value="300" style="width:100%;">
+    </div>
+  </div>
+
+  <div id="gridModeSection" style="display:none;">
+    <div class="field-card" style="margin-top:10px;">
+      <label>🔍 一覧モードの文字の大きさ: <span id="gridSizeValue">120</span>px</label>
+      <input type="range" id="gridSizeSlider" min="70" max="220" value="120" style="width:100%;">
+    </div>
+    <div class="hint" style="margin-top:10px;">💡 マスの中に直接描けるよ。文字ラベルをタップすると、その文字を1文字表示で開いて細かく直せるよ。</div>
+    <div class="griddraw-container" id="gridModeGrid"></div>
   </div>
 
   <div class="field-card" style="margin-top:10px;">
     <label>✏️ ペンの太さ: <span id="penWidthValue">12</span></label>
-    <input type="range" id="penWidthSlider" min="4" max="32" value="12" style="width:100%;">
+    <input type="range" id="penWidthSlider" min="4" max="60" value="12" style="width:100%;">
   </div>
 
-  <div class="hint">💡 指でもApple Pencilでも描けるよ。ピンチで拡大、ダブルタップで元のサイズに戻る。書いた内容はブラウザに自動保存されるよ(このGitHub Pagesのサイト上でのみ)。</div>
+  <div class="hint">💡 指でもApple Pencilでも描けるよ。ピンチで拡大、ダブルタップで元のサイズに戻る。書いた内容はこのサイトを開くたびに自動で保存・復元されるよ。</div>
 
   <div class="bottom-actions">
     <button class="btn ghost" id="overviewBtn">📋 一覧から選ぶ</button>
@@ -430,6 +489,16 @@ function loadFromStorage(){
       document.getElementById('penWidthSlider').value = BASE_WIDTH;
       document.getElementById('penWidthValue').textContent = BASE_WIDTH;
     }
+    if (data && data.canvasSize){
+      document.getElementById('canvasSizeSlider').value = data.canvasSize;
+      document.getElementById('canvasSizeValue').textContent = data.canvasSize;
+      document.getElementById('canvasFrame').style.maxWidth = data.canvasSize + 'px';
+    }
+    if (data && data.gridSize){
+      gridSize = data.gridSize;
+      document.getElementById('gridSizeSlider').value = gridSize;
+      document.getElementById('gridSizeValue').textContent = gridSize;
+    }
   } catch(e){ /* ignore corrupted storage */ }
 }
 
@@ -439,7 +508,8 @@ function saveToStorageDebounced(){
   saveTimer = setTimeout(function(){
     try {
       var fontName = document.getElementById('fontNameInput').value;
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ strokes: strokesByChar, fontName: fontName, penWidth: BASE_WIDTH }));
+      var canvasSize = parseInt(document.getElementById('canvasSizeSlider').value, 10);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ strokes: strokesByChar, fontName: fontName, penWidth: BASE_WIDTH, canvasSize: canvasSize, gridSize: gridSize }));
     } catch(e){ /* storage full or unavailable, ignore */ }
   }, 400);
 }
@@ -461,29 +531,16 @@ penWidthSlider.addEventListener('input', function(){
   saveToStorageDebounced();
 });
 
+var canvasSizeSlider = document.getElementById('canvasSizeSlider');
+var canvasSizeValue = document.getElementById('canvasSizeValue');
+canvasSizeSlider.addEventListener('input', function(){
+  var size = parseInt(canvasSizeSlider.value, 10);
+  canvasSizeValue.textContent = size;
+  frame.style.maxWidth = size + 'px';
+  saveToStorageDebounced();
+});
+
 function currentChar(){ return CHAR_SET[currentIndex]; }
-
-function drawGuides(){
-  // faint big reference character
-  ctx.save();
-  ctx.fillStyle = 'rgba(120,105,145,0.14)';
-  ctx.font = '500 ' + Math.round(DRAW_RES*0.62) + 'px "Noto Sans JP", sans-serif';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'alphabetic';
-  ctx.fillText(currentChar(), DRAW_RES/2, DRAW_RES*0.78);
-  ctx.restore();
-
-  // baseline
-  ctx.save();
-  ctx.setLineDash([10,10]);
-  ctx.strokeStyle = '#d9cdee';
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.moveTo(12, DRAW_RES*0.78);
-  ctx.lineTo(DRAW_RES-12, DRAW_RES*0.78);
-  ctx.stroke();
-  ctx.restore();
-}
 
 function drawStrokeList(targetCtx, strokes){
   strokes.forEach(function(stroke){
@@ -506,11 +563,44 @@ function drawStrokeList(targetCtx, strokes){
   });
 }
 
+// renders one character's guides + strokes onto targetCtx, whose canvas backing
+// resolution is `displayRes` px square. All coordinates are authored in DRAW_RES
+// space (0..600); a uniform scale maps them down (or up) to displayRes so the
+// exact same stroke data renders correctly at any canvas size (single view or
+// grid-mode thumbnails).
+function renderCharToCtx(targetCtx, ch, displayRes, showBigGuide){
+  targetCtx.clearRect(0,0,displayRes,displayRes);
+  targetCtx.save();
+  var s = displayRes/DRAW_RES;
+  targetCtx.scale(s,s);
+
+  if (showBigGuide !== false){
+    targetCtx.save();
+    targetCtx.fillStyle = 'rgba(120,105,145,0.14)';
+    targetCtx.font = '500 ' + Math.round(DRAW_RES*0.62) + 'px "Noto Sans JP", sans-serif';
+    targetCtx.textAlign = 'center';
+    targetCtx.textBaseline = 'alphabetic';
+    targetCtx.fillText(ch, DRAW_RES/2, DRAW_RES*0.78);
+    targetCtx.restore();
+  }
+
+  targetCtx.save();
+  targetCtx.setLineDash(showBigGuide !== false ? [10,10] : []);
+  targetCtx.strokeStyle = '#d9cdee';
+  targetCtx.lineWidth = 3;
+  targetCtx.beginPath();
+  targetCtx.moveTo(12, DRAW_RES*0.78);
+  targetCtx.lineTo(DRAW_RES-12, DRAW_RES*0.78);
+  targetCtx.stroke();
+  targetCtx.restore();
+
+  var strokes = strokesByChar[ch] || [];
+  drawStrokeList(targetCtx, strokes);
+  targetCtx.restore();
+}
+
 function redrawCanvas(){
-  ctx.clearRect(0,0,DRAW_RES,DRAW_RES);
-  drawGuides();
-  var strokes = strokesByChar[currentChar()] || [];
-  drawStrokeList(ctx, strokes);
+  renderCharToCtx(ctx, currentChar(), DRAW_RES, true);
 }
 
 /* ---- pointer handling: single pointer draws, two pointers pinch/pan ---- */
@@ -534,12 +624,14 @@ function resetZoom(){
   applyTransform();
 }
 
-function clientToCanvasPoint(clientX, clientY){
-  var rect = canvas.getBoundingClientRect();
+function clientToCanvasPoint(clientX, clientY, targetCanvas){
+  var rect = (targetCanvas || canvas).getBoundingClientRect();
   var x = (clientX - rect.left) / rect.width * DRAW_RES;
   var y = (clientY - rect.top) / rect.height * DRAW_RES;
   return { x:x, y:y };
 }
+
+var lastStrokeMeta = null; // { char, strokeRef, time } for double-tap cleanup
 
 frame.addEventListener('pointerdown', function(e){
   e.preventDefault();
@@ -547,15 +639,15 @@ frame.addEventListener('pointerdown', function(e){
   activePointers.set(e.pointerId, { x:e.clientX, y:e.clientY });
 
   if (activePointers.size >= 2){
-    // switch to pinch/pan mode; cancel any in-progress stroke
-    if (isDrawing){
-      isDrawing = false;
-      if (currentStroke && currentStroke.pts.length < 2){
-        var arr = strokesByChar[currentChar()];
-        if (arr && arr.length && arr[arr.length-1] === currentStroke) arr.pop();
-      }
-      currentStroke = null;
+    // switch to pinch/pan mode; always cancel any in-progress stroke,
+    // since a second finger joining almost always means a zoom gesture, not drawing
+    if (isDrawing && currentStroke){
+      var arr = strokesByChar[currentChar()];
+      if (arr && arr.length && arr[arr.length-1] === currentStroke) arr.pop();
     }
+    isDrawing = false;
+    currentStroke = null;
+    lastStrokeMeta = null;
     var pts = Array.from(activePointers.values());
     pinchStartDist = Math.hypot(pts[0].x-pts[1].x, pts[0].y-pts[1].y);
     pinchStartZoom = zoom;
@@ -571,17 +663,26 @@ frame.addEventListener('pointerdown', function(e){
   if (dt < 300 && dist < 30){
     resetZoom();
     lastTapTime = 0;
+    // also remove the tiny stray mark created by the first tap of the double-tap
+    if (lastStrokeMeta && (now - lastStrokeMeta.time) < 400){
+      var arr2 = strokesByChar[lastStrokeMeta.char];
+      if (arr2){
+        var idx = arr2.indexOf(lastStrokeMeta.strokeRef);
+        if (idx !== -1) arr2.splice(idx,1);
+      }
+      lastStrokeMeta = null;
+      redrawCanvas();
+    }
     return;
   }
   lastTapTime = now;
   lastTapX = e.clientX; lastTapY = e.clientY;
 
   var p = clientToCanvasPoint(e.clientX, e.clientY);
-  var pressure = (e.pressure && e.pressure > 0) ? e.pressure : 0.5;
-  var w = Math.max(BASE_WIDTH*0.5, Math.min(BASE_WIDTH*1.5, BASE_WIDTH*(0.5+pressure)));
-  currentStroke = { w:w, pts:[p] };
+  currentStroke = { w:BASE_WIDTH, pts:[p] };
   if (!strokesByChar[currentChar()]) strokesByChar[currentChar()] = [];
   strokesByChar[currentChar()].push(currentStroke);
+  lastStrokeMeta = { char: currentChar(), strokeRef: currentStroke, time: now };
   isDrawing = true;
   currentPointerId = e.pointerId;
   redrawCanvas();
@@ -653,6 +754,130 @@ function groupOf(index){
   return GROUPS[0];
 }
 
+var mode = 'single'; // 'single' | 'grid'
+var gridSize = 120;
+
+function refreshView(){
+  if (mode === 'grid'){
+    renderGridMode();
+  } else {
+    redrawCanvas();
+    document.getElementById('charBadge').textContent = currentChar();
+    document.getElementById('charIndexLabel').textContent = (currentIndex+1) + ' / ' + TOTAL_CHARS;
+  }
+  renderGroupTabs();
+  updateProgress();
+}
+
+function setMode(newMode){
+  mode = newMode;
+  document.getElementById('singleModeSection').style.display = (mode==='single') ? 'block' : 'none';
+  document.getElementById('gridModeSection').style.display = (mode==='grid') ? 'block' : 'none';
+  document.getElementById('modeToggleBtn').textContent = (mode==='single') ? '🔲 一覧で描く' : '✏️ 1文字ずつ描く';
+  refreshView();
+}
+document.getElementById('modeToggleBtn').addEventListener('click', function(){
+  setMode(mode === 'single' ? 'grid' : 'single');
+});
+
+var gridSizeSlider = document.getElementById('gridSizeSlider');
+var gridSizeValue = document.getElementById('gridSizeValue');
+gridSizeSlider.addEventListener('input', function(){
+  gridSize = parseInt(gridSizeSlider.value, 10);
+  gridSizeValue.textContent = gridSize;
+  saveToStorageDebounced();
+  renderGridMode();
+});
+
+/* ---- grid-mode pointer helpers (single pointer per cell, no pinch/zoom here) ---- */
+var gridActiveStroke = null; // { char, stroke, canvas, ctx }
+
+function wireGridCell(cellEl, canvasEl, ch){
+  var cctx = canvasEl.getContext('2d');
+
+  function localPoint(e){
+    return clientToCanvasPoint(e.clientX, e.clientY, canvasEl);
+  }
+
+  canvasEl.addEventListener('pointerdown', function(e){
+    e.preventDefault();
+    canvasEl.setPointerCapture(e.pointerId);
+    var p = localPoint(e);
+    var stroke = { w: BASE_WIDTH, pts:[p] };
+    if (!strokesByChar[ch]) strokesByChar[ch] = [];
+    strokesByChar[ch].push(stroke);
+    gridActiveStroke = { char: ch, stroke: stroke, canvasEl: canvasEl, pointerId: e.pointerId };
+    renderCharToCtx(cctx, ch, gridSize, false);
+  }, { passive:false });
+
+  canvasEl.addEventListener('pointermove', function(e){
+    if (!gridActiveStroke || gridActiveStroke.pointerId !== e.pointerId || gridActiveStroke.char !== ch) return;
+    e.preventDefault();
+    var p = localPoint(e);
+    gridActiveStroke.stroke.pts.push(p);
+    renderCharToCtx(cctx, ch, gridSize, false);
+  }, { passive:false });
+
+  function endGrid(e){
+    if (!gridActiveStroke || gridActiveStroke.pointerId !== e.pointerId || gridActiveStroke.char !== ch) return;
+    gridActiveStroke = null;
+    saveToStorageDebounced();
+    updateProgress();
+    updateGridCellFilledState(cellEl, ch);
+  }
+  canvasEl.addEventListener('pointerup', endGrid);
+  canvasEl.addEventListener('pointercancel', endGrid);
+}
+
+function updateGridCellFilledState(cellEl, ch){
+  var filled = strokesByChar[ch] && strokesByChar[ch].length > 0;
+  cellEl.style.borderColor = filled ? '#a98fd9' : '';
+}
+
+function renderGridMode(){
+  var container = document.getElementById('gridModeGrid');
+  container.innerHTML = '';
+  var g = groupOf(currentIndex);
+  g.chars.forEach(function(ch){
+    var cell = document.createElement('div');
+    cell.className = 'griddraw-cell';
+    cell.style.width = gridSize + 'px';
+    cell.style.height = gridSize + 'px';
+
+    var label = document.createElement('div');
+    label.className = 'griddraw-label';
+    label.textContent = ch;
+    label.addEventListener('click', function(){
+      currentIndex = CHAR_TO_INDEX[ch];
+      setMode('single');
+    });
+
+    var clearBtn = document.createElement('div');
+    clearBtn.className = 'griddraw-clear';
+    clearBtn.textContent = '✕';
+    clearBtn.addEventListener('click', function(){
+      strokesByChar[ch] = [];
+      renderCharToCtx(canvasEl.getContext('2d'), ch, gridSize, false);
+      updateGridCellFilledState(cell, ch);
+      saveToStorageDebounced();
+      updateProgress();
+    });
+
+    var canvasEl = document.createElement('canvas');
+    canvasEl.width = gridSize;
+    canvasEl.height = gridSize;
+
+    cell.appendChild(canvasEl);
+    cell.appendChild(label);
+    cell.appendChild(clearBtn);
+    container.appendChild(cell);
+
+    renderCharToCtx(canvasEl.getContext('2d'), ch, gridSize, false);
+    updateGridCellFilledState(cell, ch);
+    wireGridCell(cell, canvasEl, ch);
+  });
+}
+
 function renderGroupTabs(){
   var nav = document.getElementById('groupTabs');
   nav.innerHTML = '';
@@ -662,7 +887,7 @@ function renderGroupTabs(){
     btn.className = (groupOf(currentIndex) === g) ? 'active' : '';
     btn.addEventListener('click', function(){
       currentIndex = g.startIndex;
-      goTo(currentIndex);
+      refreshView();
     });
     nav.appendChild(btn);
   });
@@ -680,11 +905,7 @@ function updateProgress(){
 function goTo(index){
   currentIndex = Math.max(0, Math.min(TOTAL_CHARS-1, index));
   resetZoom();
-  redrawCanvas();
-  document.getElementById('charBadge').textContent = currentChar();
-  document.getElementById('charIndexLabel').textContent = (currentIndex+1) + ' / ' + TOTAL_CHARS;
-  renderGroupTabs();
-  updateProgress();
+  refreshView();
 }
 
 document.getElementById('prevBtn').addEventListener('click', function(){ goTo(currentIndex-1); });
@@ -993,10 +1214,10 @@ document.getElementById('exportRunBtn').addEventListener('click', function(){
       var cell = document.createElement('div');
       cell.className = 'overview-cell' + (info.empty ? '' : ' filled');
       var c = document.createElement('canvas');
-      c.width = 60; c.height = 60;
+      c.width = 160; c.height = 160;
       var cctx = c.getContext('2d');
       try {
-        var path = builtFont.getPath(info.char, 6, 46, 40);
+        var path = builtFont.getPath(info.char, 16, 122, 106);
         path.fill = '#4a3f5c';
         path.draw(cctx);
       } catch(e){}
